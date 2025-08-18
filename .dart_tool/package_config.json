@@ -183,9 +183,9 @@
     },
     {
       "name": "js",
-      "rootUri": "file:///C:/Users/Dell/AppData/Local/Pub/Cache/hosted/pub.dev/js-0.6.7",
+      "rootUri": "file:///C:/Users/Dell/AppData/Local/Pub/Cache/hosted/pub.dev/js-0.7.2",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.7"
     },
     {
       "name": "json_annotation",
