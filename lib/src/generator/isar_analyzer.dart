@@ -3,15 +3,15 @@
 part of isar_generator;
 
 class _IsarAnalyzer {
-  ObjectInfo analyzeCollection(Element2 element) {
+  ObjectInfo analyzeCollection(Element element) {
     final constructor = _checkValidClass(element);
-    final modelClass = element as ClassElement2;
+    final modelClass = element as ClassElement;
 
     final accessors = modelClass.allAccessors;
     final idProperties = accessors.where((e) => e.hasIdAnnotation).toList();
     final String idPropertyName;
     if (idProperties.isEmpty) {
-      if (accessors.any((e) => e.name3 == 'id')) {
+      if (accessors.any((e) => e.name == 'id')) {
         idPropertyName = 'id';
       } else {
         _err(
@@ -20,19 +20,19 @@ class _IsarAnalyzer {
         );
       }
     } else if (idProperties.length == 1) {
-      idPropertyName = idProperties.single.name3!;
+      idPropertyName = idProperties.single.name!;
     } else {
       _err('Two or more properties are annotated with @id.', modelClass);
     }
 
     final properties = <PropertyInfo>[];
     var index = 1;
-    for (final propertyElement2 in modelClass.allAccessors) {
-      final isId = propertyElement2.name3 == idPropertyName;
+    for (final propertyElement in modelClass.allAccessors) {
+      final isId = propertyElement.name == idPropertyName;
       final property = _analyzePropertyInfo(
-        propertyElement2,
+        propertyElement,
         constructor,
-        isId && propertyElement2.type.isDartCoreInt ? 0 : index,
+        isId && propertyElement.type.isDartCoreInt ? 0 : index,
         isId,
       );
       properties.add(property);
@@ -43,15 +43,15 @@ class _IsarAnalyzer {
     _checkValidPropertiesConstructor(properties, constructor);
 
     final indexes = <IndexInfo>[];
-    for (final propertyElement2 in modelClass.allAccessors) {
-      indexes.addAll(analyzeObjectIndex(properties, propertyElement2));
+    for (final propertyElement in modelClass.allAccessors) {
+      indexes.addAll(analyzeObjectIndex(properties, propertyElement));
     }
     if (indexes.map((e) => e.name).toSet().length != indexes.length) {
       _err('Two or more indexes have the same name.', modelClass);
     }
 
     return ObjectInfo(
-      dartName: modelClass.name3!,
+      dartName: modelClass.name!,
       isarName: modelClass.isarName,
       accessor: modelClass.collectionAccessor,
       properties: properties,
@@ -60,15 +60,15 @@ class _IsarAnalyzer {
     );
   }
 
-  ObjectInfo analyzeEmbedded(Element2 element) {
+  ObjectInfo analyzeEmbedded(Element element) {
     final constructor = _checkValidClass(element);
-    final modelClass = element as ClassElement2;
+    final modelClass = element as ClassElement;
 
     final properties = <PropertyInfo>[];
     for (var i = 0; i < modelClass.allAccessors.length; i++) {
-      final propertyElement2 = modelClass.allAccessors[i];
+      final propertyElement = modelClass.allAccessors[i];
       final property = _analyzePropertyInfo(
-        propertyElement2,
+        propertyElement,
         constructor,
         i + 1,
         false,
@@ -85,16 +85,16 @@ class _IsarAnalyzer {
     }
 
     return ObjectInfo(
-      dartName: modelClass.name3!,
+      dartName: modelClass.name!,
       isarName: modelClass.isarName,
       properties: properties,
     );
   }
 
-  ConstructorElement2 _checkValidClass(Element2 modelClass) {
-    if (modelClass is! ClassElement2 ||
-        modelClass is EnumElement2 ||
-        modelClass is MixinElement2) {
+  ConstructorElement _checkValidClass(Element modelClass) {
+    if (modelClass is! ClassElement ||
+        modelClass is EnumElement ||
+        modelClass is MixinElement) {
       _err(
         'Only classes may be annotated with @Collection or @Embedded.',
         modelClass,
@@ -109,7 +109,7 @@ class _IsarAnalyzer {
       _err('Class must be public.', modelClass);
     }
 
-    final constructor = modelClass.constructors2
+    final constructor = modelClass.constructors
         .where((c) => !c.isSynthetic)
         .firstOrNull;
 
@@ -118,8 +118,8 @@ class _IsarAnalyzer {
     }
 
     final hasCollectionSupertype = modelClass.allSupertypes.any((type) {
-      return type.element3.collectionAnnotation != null ||
-          type.element3.embeddedAnnotation != null;
+      return type.element.collectionAnnotation != null ||
+          type.element.embeddedAnnotation != null;
     });
     if (hasCollectionSupertype) {
       _err(
@@ -134,17 +134,17 @@ class _IsarAnalyzer {
 
   void _checkValidPropertiesConstructor(
     List<PropertyInfo> properties,
-    ConstructorElement2 constructor,
+    ConstructorElement constructor,
   ) {
     if (properties.map((e) => e.isarName).toSet().length != properties.length) {
       _err(
         'Two or more properties have the same name.',
-        constructor.enclosingElement2,
+        constructor.enclosingElement,
       );
     }
     final unknownConstructorParameter = constructor.formalParameters
         .where(
-          (p) => p.isRequired && !properties.any((e) => e.dartName == p.name3),
+          (p) => p.isRequired && !properties.any((e) => e.dartName == p.name),
     )
         .firstOrNull;
 
@@ -157,12 +157,12 @@ class _IsarAnalyzer {
     }
   }
 
-  Set<String> _getEmbeddedDartNames(ClassElement2 element) {
-    void fillNames(Set<String> names, ClassElement2 element) {
+  Set<String> _getEmbeddedDartNames(ClassElement element) {
+    void fillNames(Set<String> names, ClassElement element) {
       for (final property in element.allAccessors) {
-        final type = property.type.scalarType.element3;
-        if (type is ClassElement2 && type.embeddedAnnotation != null) {
-          if (names.add(type.name3??'')) {
+        final type = property.type.scalarType.element;
+        if (type is ClassElement && type.embeddedAnnotation != null) {
+          if (names.add(type.name??'')) {
             fillNames(names, type);
           }
         }
@@ -175,8 +175,8 @@ class _IsarAnalyzer {
   }
 
   PropertyInfo _analyzePropertyInfo(
-    PropertyInducingElement2 property,
-    ConstructorElement2 constructor,
+    PropertyInducingElement property,
+    ConstructorElement constructor,
     int propertyIndex,
     bool isId,
   ) {
@@ -185,15 +185,15 @@ class _IsarAnalyzer {
     String? enumPropertyName;
 
     late final IsarType type;
-    if (dartType.scalarType.element3 is EnumElement2) {
-      final enumClass = dartType.scalarType.element3! as EnumElement2;
+    if (dartType.scalarType.element is EnumElement) {
+      final enumClass = dartType.scalarType.element! as EnumElement;
       final enumElements =
-          enumClass.fields2.where((f) => f.isEnumConstant).toList();
+          enumClass.fields.where((f) => f.isEnumConstant).toList();
 
       final enumProperty = enumClass.enumValueProperty;
-      enumPropertyName = enumProperty?.name3 ?? 'index';
+      enumPropertyName = enumProperty?.name ?? 'index';
       if (enumProperty != null &&
-          enumProperty.nonSynthetic2 is PropertyAccessorElement2) {
+          enumProperty.nonSynthetic is PropertyAccessorElement) {
         _err('Only fields are supported for enum properties', enumProperty);
       }
 
@@ -213,7 +213,7 @@ class _IsarAnalyzer {
         dynamic propertyValue = i;
         if (enumProperty != null) {
           final property =
-              element.computeConstantValue()!.getField(enumProperty.name3!)!;
+              element.computeConstantValue()!.getField(enumProperty.name!)!;
           propertyValue = property.toBoolValue() ??
               property.toIntValue() ??
               property.toDoubleValue() ??
@@ -233,7 +233,7 @@ class _IsarAnalyzer {
             enumProperty,
           );
         }
-        enumMap[element.name3!] = propertyValue;
+        enumMap[element.name!] = propertyValue;
       }
     } else {
       if (dartType.propertyType != null) {
@@ -270,7 +270,7 @@ class _IsarAnalyzer {
     }
 
     final constructorParameter = constructor.formalParameters
-        .where((p) => p.name3 == property.name3)
+        .where((p) => p.name == property.name)
         .firstOrNull;
     int? constructorPosition;
     late DeserializeMode mode;
@@ -287,20 +287,20 @@ class _IsarAnalyzer {
       constructorPosition =
           constructor.formalParameters.indexOf(constructorParameter);
     } else {
-      mode = property.setter2 == null
+      mode = property.setter == null
           ? DeserializeMode.none
           : DeserializeMode.assign;
     }
 
     return PropertyInfo(
       index: propertyIndex,
-      dartName: property.name3!,
+      dartName: property.name!,
       isarName: property.isarName,
       typeClassName: type == IsarType.json
-          ? dartType.element3!.name3!
-          : dartType.scalarType.element3!.name3!,
+          ? dartType.element!.name!
+          : dartType.scalarType.element!.name!,
       targetIsarName:
-          type.isObject ? dartType.scalarType.element3!.isarName : null,
+          type.isObject ? dartType.scalarType.element!.isarName : null,
       type: type,
       isId: isId,
       enumMap: enumMap,
@@ -313,7 +313,7 @@ class _IsarAnalyzer {
           type.isList ? _defaultValue(dartType.scalarType) : null,
       utc: type.isDate && property.hasUtcAnnotation,
       mode: mode,
-      assignable: property.setter2 != null,
+      assignable: property.setter != null,
       constructorPosition: constructorPosition,
     );
   }
@@ -343,17 +343,17 @@ class _IsarAnalyzer {
     } else if (type.isDartCoreMap) {
       return 'const <String, dynamic>{}';
     } else {
-      final element = type.element3!;
-      if (element is EnumElement2) {
-        final firstConst = element.fields2.where((f) => f.isEnumConstant).first;
-        return '${element.name3}.${firstConst.name3}';
-      } else if (element is ClassElement2) {
+      final element = type.element!;
+      if (element is EnumElement) {
+        final firstConst = element.fields.where((f) => f.isEnumConstant).first;
+        return '${element.name}.${firstConst.name}';
+      } else if (element is ClassElement) {
         final defaultConstructor = _checkValidClass(element);
-        var code = '${element.name3}(';
+        var code = '${element.name}(';
         for (final param in defaultConstructor.formalParameters) {
           if (!param.isOptional) {
             if (param.isNamed) {
-              code += '${param.name3}: ';
+              code += '${param.name}: ';
             }
             code += _defaultValue(param.type);
             code += ', ';
@@ -368,7 +368,7 @@ class _IsarAnalyzer {
 
   Iterable<IndexInfo> analyzeObjectIndex(
     List<PropertyInfo> properties,
-    PropertyInducingElement2 element,
+    PropertyInducingElement element,
   ) sync* {
     for (final index in element.indexAnnotations) {
       final indexProperties = [element.isarName, ...index.composite];

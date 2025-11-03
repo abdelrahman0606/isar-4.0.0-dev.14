@@ -1,18 +1,17 @@
 part of isar_generator;
 
-const TypeChecker _dateTimeChecker = TypeChecker.fromRuntime(DateTime);
-
+const TypeChecker _dateTimeChecker = TypeChecker.fromUrl('dart:core#DateTime');
 extension on DartType {
   bool get isDartCoreDateTime =>
-      element3 != null && _dateTimeChecker.isExactly(element3!);
+      element != null && _dateTimeChecker.isExactly(element!);
 
   IsarType? get _primitiveIsarType {
     if (isDartCoreBool) {
       return IsarType.bool;
     } else if (isDartCoreInt) {
-      if (alias?.element2.name3 == 'byte') {
+      if (alias?.element.name == 'byte') {
         return IsarType.byte;
-      } else if (alias?.element2.name3 == 'short') {
+      } else if (alias?.element.name == 'short') {
         return IsarType.int;
       } else {
         return IsarType.long;
@@ -27,7 +26,7 @@ extension on DartType {
       return IsarType.string;
     } else if (isDartCoreDateTime) {
       return IsarType.dateTime;
-    } else if (element3!.embeddedAnnotation != null) {
+    } else if (element!.embeddedAnnotation != null) {
       return IsarType.object;
     } else if (this is DynamicType) {
       return IsarType.json;
@@ -99,7 +98,7 @@ extension on DartType {
       final fromJson = element.getNamedConstructor('fromJson');
       if (toJson != null && fromJson != null) {
         final toJsonReturnType = toJson.returnType;
-        final fromJsonParameterType = fromJson.parameters.firstOrNull?.type;
+        final fromJsonParameterType = fromJson.formalParameters.firstOrNull?.type;
         if (toJsonReturnType.isDartCoreMap &&
             toJsonReturnType is ParameterizedType &&
             toJsonReturnType.typeArguments[0].isDartCoreString &&
@@ -114,5 +113,4 @@ extension on DartType {
       }
     }
     return false;
-  }
-}
+  }}
