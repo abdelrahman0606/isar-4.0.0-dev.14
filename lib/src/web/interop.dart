@@ -1,27 +1,39 @@
 // ignore_for_file: public_member_api_docs, non_constant_identifier_names
 
+import 'dart:js_interop';
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
+@JS('self')
+external JSWindow get window;
 
 @JS()
 @staticInterop
 class JSWindow {}
 
-extension JSWIndowX on JSWindow {
+extension JSWindowX on JSWindow {
   external JSIsar get isar;
+  external JSWebAssembly get WebAssembly;
+  external JSPromise fetch(String url);
+}
 
-  external JSWasm get WebAssembly;
+@JS('WebAssembly')
+@staticInterop
+class JSWebAssembly {}
 
-  external Object fetch(String url);
+extension JSWebAssemblyX on JSWebAssembly {
+  external JSPromise instantiateStreaming(
+      JSPromise source,
+      JSObject? importObject,
+      );
 }
 
 @JS()
 @staticInterop
-class JSWasm {}
+class JSInstantiateResult {}
 
-extension JSWasmX on JSWasm {
-  external Object instantiateStreaming(Object source, dynamic importObject);
+extension JSInstantiateResultX on JSInstantiateResult {
+  external JSWasmModule get module;
+  external JSWasmInstance get instance;
 }
 
 @JS()
@@ -45,25 +57,20 @@ extension JSWasmInstanceX on JSWasmInstance {
 class JSIsar {}
 
 extension JSIsarX on JSIsar {
-  external JsMemory get memory;
+  external JSMemory get memory;
 
-  Uint8List get u8Heap => memory.buffer.asUint8List();
-
-  Uint16List get u16Heap => memory.buffer.asUint16List();
-
-  Uint32List get u32Heap => memory.buffer.asUint32List();
+  Uint8List get u8Heap => memory.buffer.toDart.asUint8List();
+  Uint16List get u16Heap => memory.buffer.toDart.asUint16List();
+  Uint32List get u32Heap => memory.buffer.toDart.asUint32List();
 
   external int malloc(int byteCount);
-
   external void free(int ptrAddress);
 }
 
 @JS()
 @staticInterop
-class JsMemory {}
+class JSMemory {}
 
-@JS()
-@staticInterop
-extension on JsMemory {
-  external ByteBuffer get buffer;
+extension JSMemoryX on JSMemory {
+  external JSArrayBuffer get buffer;
 }

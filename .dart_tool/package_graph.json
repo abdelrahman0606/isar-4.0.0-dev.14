@@ -10,7 +10,6 @@
         "analyzer",
         "build",
         "ffi",
-        "js",
         "meta",
         "source_gen"
       ],
@@ -63,11 +62,6 @@
     {
       "name": "meta",
       "version": "1.17.0",
-      "dependencies": []
-    },
-    {
-      "name": "js",
-      "version": "0.7.2",
       "dependencies": []
     },
     {

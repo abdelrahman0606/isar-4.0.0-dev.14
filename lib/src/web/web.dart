@@ -1,9 +1,7 @@
 // ignore_for_file: public_member_api_docs
 
 import 'dart:async';
-import 'dart:html';
-import 'dart:js_util';
-
+import 'dart:js_interop';
 import 'package:isar/isar.dart';
 import 'package:isar/src/web/interop.dart';
 
@@ -15,13 +13,13 @@ FutureOr<IsarCoreBindings> initializePlatformBindings([
   String? library,
 ]) async {
   final url = library ?? 'https://unpkg.com/isar@${Isar.version}/isar.wasm';
-  final w = window as JSWindow;
+  final w = window;
   final promise = w.WebAssembly.instantiateStreaming(
     w.fetch(url),
-    jsify({'env': <String, String>{}}),
+    JSObject(),
   );
-  final wasm = await promiseToFuture<JSWasmModule>(promise);
-  return wasm.instance.exports;
+  final wasm = await promise.toDart;
+  return (wasm as JSWasmModule).instance.exports;
 }
 
 typedef IsarCoreBindings = JSIsar;
@@ -33,11 +31,11 @@ class ReceivePort extends Stream<dynamic> {
 
   @override
   StreamSubscription<void> listen(
-    void Function(dynamic event)? onData, {
-    Function? onError,
-    void Function()? onDone,
-    bool? cancelOnError,
-  }) {
+      void Function(dynamic event)? onData, {
+        Function? onError,
+        void Function()? onDone,
+        bool? cancelOnError,
+      }) {
     throw UnimplementedError();
   }
 
@@ -89,8 +87,8 @@ int platformFastHash(String str) {
 
 @tryInline
 Future<T> runIsolate<T>(
-  String debugName,
-  FutureOr<T> Function() computation,
-) async {
+    String debugName,
+    FutureOr<T> Function() computation,
+    ) async {
   return computation();
 }
