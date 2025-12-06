@@ -200,9 +200,9 @@ abstract final class IsarCore {
   /// Writes a boolean value to the writer at the given index.
   static void writeBool(
     Pointer<CIsarWriter> writer,
-    int index, {
-    required bool value,
-  }) {
+    int index,
+    bool value,
+  ) {
     b.isar_write_bool(writer, index, value);
   }
 
