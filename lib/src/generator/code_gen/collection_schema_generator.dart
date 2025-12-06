@@ -32,6 +32,10 @@ String _generateSchema(ObjectInfo object) {
 
   final indexes = object.indexes.map(generateIndexSchema).join();
 
+  final embeddedSchemasParam = embeddedSchemas.isNotEmpty
+      ? 'embeddedSchemas: [$embeddedSchemas],'
+      : '';
+
   return '''
     final ${object.dartName.capitalize()}Schema = IsarGeneratedSchema(
       schema: IsarSchema(
@@ -45,6 +49,7 @@ String _generateSchema(ObjectInfo object) {
         serialize: serialize${object.dartName},
         deserialize: deserialize${object.dartName},
         ${!object.isEmbedded ? 'deserializeProperty: deserialize${object.dartName}Prop,' : ''}
-      )
+      ),
+      $embeddedSchemasParam
     );''';
 }
